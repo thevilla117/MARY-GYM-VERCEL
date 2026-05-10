@@ -313,7 +313,7 @@ document.getElementById('delete-cliente-form').addEventListener('submit',async(e
         await supabaseRequest("PATCH","pagos",{"id":`eq.${currentLastPagoId}`},{monto:parseFloat(deleteMontoInput.value),notas:document.getElementById('delete-motivo').value});
     }
     alert(`¡Cliente ${cl.nombre} eliminado y pago ajustado!`);
-    await loadClientes();document.getElementById('delete-cliente-form').reset();
+    await loadAllData();await loadHistorialPagos();document.getElementById('delete-cliente-form').reset();
 });
 
 // CONFIGURACIÓN
