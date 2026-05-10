@@ -92,7 +92,10 @@ function renderDashboard(){
         const isRutina=c.plan_actual==="Rutina";
         const isRutinaHoy=isRutina&&c.fecha_ultimo_pago===hoy.toISOString().split('T')[0];
         if(isRutina&&isRutinaHoy){
-            rDiv.innerHTML+=`<div class="client-card"><div><div class="client-name">${c.nombre}</div><div class="badge-plan">RUTINA</div></div><div><span class="badge badge-active">Hoy</span></div></div>`;
+            let rCard=`<div class="client-card"><div><div class="client-name">${c.nombre}</div><div class="badge-plan">RUTINA</div>`;
+            if(c.telefono){const tel=c.telefono.replace(/\D/g,'');const msg=`Hola ${c.nombre}, ¡gracias por venir hoy a MARY'S GYM! 💪`;rCard+=`<div style="text-align:right;margin-top:5px;"><a href="https://wa.me/${tel}?text=${encodeURIComponent(msg)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>`;}
+            rCard+=`</div><div><span class="badge badge-active">Hoy</span></div></div>`;
+            rDiv.innerHTML+=rCard;
             return;
         }
         if(isRutina)return;
@@ -102,9 +105,12 @@ function renderDashboard(){
         else{badge="Activo";bclass="badge-active";dtext=`${diff} días`;}
         const vLabel=diff<0?"Venció":"Vence";
         let card=`<div class="client-card"><div><div class="client-name">${c.nombre}</div><div class="badge-plan">${c.plan_actual||'Plan'}</div><div class="client-info">${vLabel}: <span class="highlight">${c.fecha_vencimiento}</span> <span class="days-badge">${dtext}</span></div>`;
-        if(diff<=3&&c.telefono){
+        if(c.telefono){
             const tel=c.telefono.replace(/\D/g,'');
-            const msg=diff<0?`Hola ${c.nombre}, tu plan en MARY'S GYM ya venció. Te invitamos a renovarlo. ¡Gracias!`:`Hola ${c.nombre}, te recordamos que tu plan en MARY'S GYM está por vencer. ¡Te esperamos!`;
+            let msg;
+            if(diff<0)msg=`Hola ${c.nombre}, tu plan en MARY'S GYM ya venció. Te invitamos a renovarlo. ¡Gracias!`;
+            else if(diff<=3)msg=`Hola ${c.nombre}, te recordamos que tu plan en MARY'S GYM está por vencer. ¡Te esperamos!`;
+            else msg=`Hola ${c.nombre}, ¡gracias por ser parte de MARY'S GYM! 💪`;
             card+=`<div style="text-align:right;margin-top:5px;"><a href="https://wa.me/${tel}?text=${encodeURIComponent(msg)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>`;
         }
         card+=`</div><div><span class="badge ${bclass}">${badge}</span></div></div>`;
