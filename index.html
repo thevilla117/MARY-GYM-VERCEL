@@ -4,18 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MARY'S GYM | Premium</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Pantalla de Login -->
+    <!-- Login -->
     <div id="login-screen" class="login-container">
         <div class="login-hero">
             <div class="login-icon"><i class="fa-solid fa-dumbbell"></i></div>
@@ -23,143 +19,78 @@
             <div class="login-subtitle">— Acceso al Panel —</div>
             <div class="login-desc">Ingresa tus credenciales para acceder</div>
         </div>
-        
         <div class="form-container">
             <form id="login-form">
                 <label for="username">Usuario</label>
                 <input type="text" id="username" required>
-                
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" required>
-                
                 <button type="submit" class="btn-primary">INICIAR SESIÓN</button>
             </form>
-            <p id="login-error" style="color: #FF3370; margin-top: 15px; display: none;">Usuario o contraseña incorrectos.</p>
+            <p id="login-error" style="color:#FF3370;margin-top:15px;display:none;">Usuario o contraseña incorrectos.</p>
         </div>
     </div>
 
-    <!-- Contenido Principal (Oculto hasta que haga login) -->
-    <div id="main-content" class="main-container" style="display: none;">
-        
-        <!-- Header -->
+    <!-- Main -->
+    <div id="main-content" class="main-container" style="display:none;">
         <div class="header-container">
-            <div id="logo-container">
-                <!-- Se llenará con JS si hay logo -->
-                <img src="Logo GYM.png" width="220" class="logo-glow" alt="Logo">
-            </div>
+            <img src="Logo GYM.png" width="220" class="logo-glow" alt="Logo">
             <div class="header-title">MARY'S GYM</div>
             <div class="header-subtitle">Panel de Control Premium</div>
         </div>
-
-        <!-- Botón Cerrar Sesión -->
-        <div style="text-align: right; margin-bottom: 20px;">
-            <button id="logout-btn" class="btn-primary" style="width: auto; padding: 10px 20px;">Cerrar Sesión</button>
+        <div style="text-align:right;margin-bottom:20px;">
+            <button id="logout-btn" class="btn-primary" style="width:auto;padding:10px 20px;">Cerrar Sesión</button>
         </div>
 
-        <!-- Métricas (KPIs) -->
+        <!-- KPIs -->
         <div class="metrics-container">
-            <div class="metric-card">
-                <div class="metric-value" id="metric-hoy">$0</div>
-                <div class="metric-label">Ingresos Hoy</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value" id="metric-semana">$0</div>
-                <div class="metric-label">Esta Semana</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value" id="metric-mes">$0</div>
-                <div class="metric-label">Este Mes</div>
-            </div>
+            <div class="metric-card"><div class="metric-value" id="metric-hoy">$0</div><div class="metric-label">Ingresos Hoy</div></div>
+            <div class="metric-card"><div class="metric-value" id="metric-semana">$0</div><div class="metric-label">Esta Semana</div></div>
+            <div class="metric-card"><div class="metric-value" id="metric-mes">$0</div><div class="metric-label">Este Mes</div></div>
         </div>
 
-        <!-- Navegación por Tabs -->
+        <!-- Tabs -->
         <div class="tabs-container">
-            <button class="tab-btn active" data-tab="dashboard"><img src="icon_dashboard.png" width="20" height="20" style="border-radius: 50%;"> DASHBOARD</button>
-            <button class="tab-btn" data-tab="pagos"><img src="icon_payments.png" width="20" height="20" style="border-radius: 50%;"> REGISTRAR PAGO</button>
-            <button class="tab-btn" data-tab="asistencia"><img src="icon_attendance.png" width="20" height="20" style="border-radius: 50%;"> ASISTENCIA</button>
-            <button class="tab-btn" data-tab="gestionar"><img src="icon_manage.png" width="20" height="20" style="border-radius: 50%;"> GESTIONAR</button>
-            <button class="tab-btn" data-tab="historial"><img src="icon_history.png" width="20" height="20" style="border-radius: 50%;"> HISTORIAL</button>
-            <button class="tab-btn" data-tab="hist-asistencia"><img src="icon_attendance_history.png" width="20" height="20" style="border-radius: 50%;"> HIST. ASISTENCIA</button>
-            <button class="tab-btn" id="tab-config" data-tab="configuracion" style="display: none;"><i class="fa-solid fa-gear"></i> CONFIGURACIÓN</button>
+            <button class="tab-btn active" data-tab="dashboard"><img src="icon_dashboard.png" width="20" height="20" style="border-radius:50%;"> DASHBOARD</button>
+            <button class="tab-btn" data-tab="pagos"><img src="icon_payments.png" width="20" height="20" style="border-radius:50%;"> REGISTRAR PAGO</button>
+            <button class="tab-btn" data-tab="asistencia"><img src="icon_attendance.png" width="20" height="20" style="border-radius:50%;"> ASISTENCIA</button>
+            <button class="tab-btn" data-tab="gestionar"><img src="icon_manage.png" width="20" height="20" style="border-radius:50%;"> GESTIONAR</button>
+            <button class="tab-btn" data-tab="historial"><img src="icon_history.png" width="20" height="20" style="border-radius:50%;"> HISTORIAL</button>
+            <button class="tab-btn" data-tab="hist-asistencia"><img src="icon_attendance_history.png" width="20" height="20" style="border-radius:50%;"> HIST. ASISTENCIA</button>
+            <button class="tab-btn" id="tab-config" data-tab="configuracion" style="display:none;"><i class="fa-solid fa-gear"></i> CONFIGURACIÓN</button>
         </div>
 
-        <!-- Contenido de los Tabs -->
-        
         <!-- DASHBOARD -->
         <div id="dashboard" class="tab-content active">
+            <div class="tab-icon-header"><img src="icon_dashboard.png" width="60"></div>
             <h2>Estado de Clientes</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                <div>
-                    <h3>Activos</h3>
-                    <div id="clientes-activos"></div>
-                </div>
-                <div>
-                    <h3>Por Vencer</h3>
-                    <div id="clientes-por-vencer"></div>
-                </div>
-                <div>
-                    <h3>Vencidos</h3>
-                    <div id="clientes-vencidos"></div>
-                </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
+                <div><h3>Activos</h3><div id="clientes-activos"></div></div>
+                <div><h3>Por Vencer</h3><div id="clientes-por-vencer"></div></div>
+                <div><h3>Vencidos</h3><div id="clientes-vencidos"></div></div>
             </div>
-            
-            <br>
-            <h2>Rutinas de Hoy</h2>
+            <br><h2>Rutinas de Hoy</h2>
             <div id="rutinas-hoy"></div>
         </div>
 
         <!-- REGISTRAR PAGO -->
         <div id="pagos" class="tab-content">
+            <div class="tab-icon-header"><img src="icon_payments.png" width="60"></div>
             <h2>Registrar Pago</h2>
-            
-            <!-- Tarifas -->
-            <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
-                <div class="form-container" style="flex: 1; min-width: 250px;">
-                    <h3>Plan Normal</h3>
-                    <div id="tarifas-normal">Cargando...</div>
-                </div>
-                <div class="form-container" style="flex: 1; min-width: 250px;">
-                    <h3>Con Entrenadora</h3>
-                    <div id="tarifas-entrenadora">Cargando...</div>
-                </div>
-            </div>
-
+            <div id="tarifas-display"></div>
             <div class="form-container">
                 <form id="pago-form">
                     <label for="cliente-select">Seleccionar Cliente (para renovar) o 'NUEVO CLIENTE'</label>
-                    <select id="cliente-select">
-                        <option value="-- NUEVO CLIENTE --">-- NUEVO CLIENTE --</option>
-                    </select>
-
-                    <div id="nuevo-cliente-fields">
-                        <label for="nuevo-nombre">Nombre del Cliente</label>
-                        <input type="text" id="nuevo-nombre">
-                    </div>
-
-                    <label for="pago-telefono">Teléfono (10 dígitos)</label>
+                    <select id="cliente-select"><option value="-- NUEVO CLIENTE --">-- NUEVO CLIENTE --</option></select>
+                    <div id="nuevo-cliente-fields"><label for="nuevo-nombre">Nombre del Cliente</label><input type="text" id="nuevo-nombre"></div>
+                    <div id="renovando-info" style="display:none;margin-bottom:15px;"><span style="font-weight:700;">Renovando plan para: </span><span class="highlight" id="renovando-nombre"></span></div>
+                    <label for="pago-telefono">Teléfono (10 dígitos, ej: 3001234567)</label>
                     <input type="text" id="pago-telefono" maxlength="10" placeholder="3001234567">
-
                     <label for="pago-plan">Tipo de Plan</label>
-                    <select id="pago-plan">
-                        <option value="Rutina">Rutina</option>
-                        <option value="Semana">Semana</option>
-                        <option value="Quincena">Quincena</option>
-                        <option value="Mensual">Mensual</option>
-                    </select>
-
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="pago-entrenadora" style="width: auto;"> Con Entrenadora
-                    </label>
-                    <br>
-
+                    <select id="pago-plan"><option value="Rutina">Rutina</option><option value="Semana">Semana</option><option value="Quincena">Quincena</option><option value="Mensual">Mensual</option></select>
+                    <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="pago-entrenadora" style="width:auto;"> Con Entrenadora</label><br>
                     <label for="pago-metodo">Método de Pago</label>
-                    <select id="pago-metodo">
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Nequi">Nequi</option>
-                        <option value="Transferencia">Transferencia</option>
-                        <option value="Otro">Otro</option>
-                    </select>
-
+                    <select id="pago-metodo"><option value="Efectivo">Efectivo</option><option value="Nequi">Nequi</option><option value="Transferencia">Transferencia</option><option value="Otro">Otro</option></select>
                     <button type="submit" class="btn-primary">REGISTRAR PAGO</button>
                 </form>
             </div>
@@ -167,6 +98,7 @@
 
         <!-- ASISTENCIA -->
         <div id="asistencia" class="tab-content">
+            <div class="tab-icon-header"><img src="icon_attendance.png" width="60"></div>
             <h2>Control de Asistencia</h2>
             <div class="form-container">
                 <form id="asistencia-form">
@@ -175,132 +107,97 @@
                     <button type="submit" class="btn-primary">REGISTRAR ENTRADA</button>
                 </form>
             </div>
-
             <h2>Asistentes de Hoy</h2>
             <div id="tabla-asistencia-hoy"></div>
         </div>
 
         <!-- GESTIONAR -->
         <div id="gestionar" class="tab-content">
+            <div class="tab-icon-header"><img src="icon_manage.png" width="60"></div>
             <h2>Gestionar Clientes</h2>
             <div class="form-container">
                 <label for="edit-cliente-select">Seleccionar Cliente para Editar</label>
                 <select id="edit-cliente-select"></select>
-
                 <form id="edit-cliente-form">
-                    <label for="edit-nombre">Nombre</label>
-                    <input type="text" id="edit-nombre" required>
-
-                    <label for="edit-telefono">Teléfono (10 dígitos)</label>
-                    <input type="text" id="edit-telefono" maxlength="10">
-
-                    <label for="edit-vencimiento">Fecha de Vencimiento</label>
-                    <input type="date" id="edit-vencimiento" required>
-
+                    <label for="edit-nombre">Nombre</label><input type="text" id="edit-nombre" required>
+                    <label for="edit-telefono">Teléfono (10 dígitos)</label><input type="text" id="edit-telefono" maxlength="10">
+                    <label for="edit-vencimiento">Fecha de Vencimiento</label><input type="date" id="edit-vencimiento" required>
                     <label for="edit-plan">Plan Actual</label>
-                    <select id="edit-plan">
-                        <option value="Rutina">Rutina</option>
-                        <option value="Semana">Semana</option>
-                        <option value="Quincena">Quincena</option>
-                        <option value="Mensual">Mensual</option>
-                    </select>
-
+                    <select id="edit-plan"><option value="Rutina">Rutina</option><option value="Semana">Semana</option><option value="Quincena">Quincena</option><option value="Mensual">Mensual</option></select>
                     <button type="submit" class="btn-primary">GUARDAR CAMBIOS</button>
                 </form>
             </div>
-
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
-
+            <hr style="border-color:rgba(255,255,255,0.1);margin:30px 0;">
             <h2>Eliminar Cliente</h2>
             <div class="form-container">
                 <form id="delete-cliente-form">
-                    <p style="color: #FFAA00;">Esta acción quitará al cliente de las listas pero conservará su historial de pagos.</p>
-                    
+                    <p style="color:#FFAA00;">Esta acción quitará al cliente de las listas pero conservará su historial de pagos.</p>
                     <label for="delete-motivo">Novedad / Motivo del retiro</label>
                     <textarea id="delete-motivo" placeholder="Ej: Se retiró al día siguiente. Se le cobró solo el día."></textarea>
-
                     <label for="delete-monto">Monto final a cobrar (ajustar si aplica devolución)</label>
                     <input type="number" id="delete-monto" step="0.01">
-
-                    <button type="submit" class="btn-primary" style="background: linear-gradient(90deg, #FF3370 0%, #C8003C 100%) !important; color: white !important;">ELIMINAR CLIENTE Y AJUSTAR PAGO</button>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(90deg,#FF3370 0%,#C8003C 100%)!important;color:white!important;">ELIMINAR CLIENTE Y AJUSTAR PAGO</button>
                 </form>
             </div>
         </div>
 
         <!-- HISTORIAL -->
         <div id="historial" class="tab-content">
+            <div class="tab-icon-header"><img src="icon_history.png" width="60"></div>
             <h2>Historial de Pagos</h2>
             <div id="historial-pagos-container"></div>
         </div>
 
         <!-- HIST. ASISTENCIA -->
         <div id="hist-asistencia" class="tab-content">
+            <div class="tab-icon-header"><img src="icon_attendance_history.png" width="60"></div>
             <h2>Historial de Asistencia</h2>
             <div id="historial-asistencia-container"></div>
         </div>
 
         <!-- CONFIGURACIÓN -->
         <div id="configuracion" class="tab-content">
-            <h2>Gestión de Usuarios</h2>
+            <div style="text-align:center;margin-top:20px;">
+                <div style="font-size:24px;font-weight:700;color:#FFB300;">Gestión de Usuarios</div>
+                <div style="color:#8A99AD;">Crea nuevos usuarios para el sistema</div>
+            </div><br>
             <div class="form-container">
                 <form id="user-form">
-                    <label for="new-username">Nombre de Usuario</label>
-                    <input type="text" id="new-username" required>
-
-                    <label for="new-password">Contraseña</label>
-                    <input type="password" id="new-password" required>
-
+                    <label for="new-username">Nombre de Usuario</label><input type="text" id="new-username" required>
+                    <label for="new-password">Contraseña</label><input type="password" id="new-password" required>
                     <label for="new-rol">Rol</label>
-                    <select id="new-rol">
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                    </select>
-
+                    <select id="new-rol"><option value="admin">Admin</option><option value="super_admin">Super Admin</option></select>
                     <button type="submit" class="btn-primary">CREAR USUARIO</button>
                 </form>
             </div>
-
             <h2>Usuarios Existentes</h2>
             <div id="tabla-usuarios"></div>
-
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
-
+            <hr style="border-color:rgba(255,255,255,0.1);margin:30px 0;">
             <h2>Gestión de Tarifas</h2>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div class="form-container" style="flex: 1; min-width: 250px;">
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+                <div class="form-container" style="flex:1;min-width:250px;">
                     <h3>Plan Normal</h3>
                     <form id="tarifas-normal-form">
-                        <label for="tn-rutina">Rutina</label>
-                        <input type="number" id="tn-rutina" required>
-                        <label for="tn-semana">Semana</label>
-                        <input type="number" id="tn-semana" required>
-                        <label for="tn-quincena">Quincena</label>
-                        <input type="number" id="tn-quincena" required>
-                        <label for="tn-mensual">Mensual</label>
-                        <input type="number" id="tn-mensual" required>
+                        <label for="tn-rutina">Rutina</label><input type="number" id="tn-rutina" required>
+                        <label for="tn-semana">Semana</label><input type="number" id="tn-semana" required>
+                        <label for="tn-quincena">Quincena</label><input type="number" id="tn-quincena" required>
+                        <label for="tn-mensual">Mensual</label><input type="number" id="tn-mensual" required>
                         <button type="submit" class="btn-primary">ACTUALIZAR NORMAL</button>
                     </form>
                 </div>
-                <div class="form-container" style="flex: 1; min-width: 250px;">
+                <div class="form-container" style="flex:1;min-width:250px;">
                     <h3>Con Entrenadora</h3>
                     <form id="tarifas-entrenadora-form">
-                        <label for="te-rutina">Rutina</label>
-                        <input type="number" id="te-rutina" required>
-                        <label for="te-semana">Semana</label>
-                        <input type="number" id="te-semana" required>
-                        <label for="te-quincena">Quincena</label>
-                        <input type="number" id="te-quincena" required>
-                        <label for="te-mensual">Mensual</label>
-                        <input type="number" id="te-mensual" required>
+                        <label for="te-rutina">Rutina</label><input type="number" id="te-rutina" required>
+                        <label for="te-semana">Semana</label><input type="number" id="te-semana" required>
+                        <label for="te-quincena">Quincena</label><input type="number" id="te-quincena" required>
+                        <label for="te-mensual">Mensual</label><input type="number" id="te-mensual" required>
                         <button type="submit" class="btn-primary">ACTUALIZAR ENTRENADORA</button>
                     </form>
                 </div>
             </div>
         </div>
-
     </div>
-
-    <!-- Custom JS -->
     <script src="script.js"></script>
 </body>
 </html>

@@ -560,11 +560,76 @@ label {
     transform: scale(1.04) rotate(0.5deg);
 }
 
+/* Tab icon header */
+.tab-icon-header {
+    text-align: center;
+    margin: 20px 0 10px 0;
+    animation: float 3.5s ease-in-out infinite;
+}
+.tab-icon-header img {
+    border-radius: 50%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 25px rgba(255,179,0,0.25), inset 0 0 0 2px rgba(255,179,0,0.4);
+    padding: 4px;
+    background: linear-gradient(145deg, rgba(255,179,0,0.1), rgba(255,111,0,0.05));
+}
+
+/* Tarifas */
+.tarifas-container { display: flex; gap: 22px; margin-bottom: 28px; animation: fadeIn 0.8s ease-out; flex-wrap: wrap; }
+.tarifa-column {
+    flex: 1; min-width: 250px;
+    background: linear-gradient(145deg, rgba(28,35,55,0.6), rgba(15,22,38,0.5));
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-radius: 20px; padding: 24px 22px;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: all 0.4s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden;
+}
+.tarifa-column::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,179,0,0.6), transparent);
+    opacity: 0; transition: opacity 0.3s ease;
+}
+.tarifa-column:hover::before { opacity: 1; }
+.tarifa-column:hover {
+    border-color: rgba(255,179,0,0.45); transform: translateY(-6px);
+    box-shadow: 0 0 30px rgba(255,179,0,0.18), 0 22px 45px rgba(0,0,0,0.4);
+}
+.tarifa-column h3 {
+    font-family: 'Bebas Neue','Outfit',sans-serif;
+    background: linear-gradient(90deg, #FFD54F, #FFB300, #FF6F00);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    font-size: 1.35rem; margin-bottom: 18px; text-align: center;
+    text-transform: uppercase; letter-spacing: 3px; margin-top: 0; font-weight: 700;
+}
+.tarifa-item {
+    display: flex; justify-content: space-between; padding: 12px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.95rem; transition: all 0.25s ease;
+}
+.tarifa-item:hover { background: rgba(255,179,0,0.04); padding-left: 12px; }
+.tarifa-item:last-child { border-bottom: none; }
+.tarifa-item span:first-child { color: #C8D2E0; font-weight: 600; letter-spacing: 0.4px; }
+.tarifa-item span:last-child { color: #FFD54F; font-weight: 800; text-shadow: 0 0 12px rgba(255,179,0,0.35); letter-spacing: 0.3px; }
+
+/* Expander / Collapsible */
+.expander-container { margin-bottom: 12px; }
+.expander-header {
+    background: linear-gradient(135deg, rgba(28,35,55,0.6), rgba(15,22,38,0.5));
+    border-radius: 14px; border: 1px solid rgba(255,255,255,0.07);
+    padding: 14px 20px; font-weight: 700; color: #FFB300;
+    cursor: pointer; transition: all 0.3s ease; display: flex; justify-content: space-between; align-items: center;
+}
+.expander-header:hover { border-color: rgba(255,179,0,0.35); background: linear-gradient(135deg, rgba(40,30,20,0.6), rgba(25,18,35,0.5)); }
+.expander-header .arrow { transition: transform 0.3s ease; }
+.expander-header.open .arrow { transform: rotate(180deg); }
+.expander-body { display: none; padding: 10px 0; }
+.expander-body.open { display: block; animation: fadeIn 0.3s ease-out; }
+
+/* Textarea */
+textarea { min-height: 80px; resize: vertical; }
+
+/* Subheaders */
+h2, h3 { color: #FFFFFF !important; font-weight: 700 !important; letter-spacing: 0.3px; }
+
 /* Ocultar secciones por defecto */
-.tab-content {
-    display: none;
-}
-.tab-content.active {
-    display: block;
-    animation: fadeIn 0.5s ease-out;
-}
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }

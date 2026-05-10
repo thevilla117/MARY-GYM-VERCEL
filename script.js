@@ -1,17 +1,7 @@
-// Configuración de Supabase
 const SUPABASE_URL = "https://zmvrfdtacxdudjmiswka.supabase.co";
 const SUPABASE_KEY = "sb_publishable__w3Thfledx3ORdNHxCigrw_WjyShcDg";
-
-// Estado de la aplicación
-let currentUser = null;
-let userRole = null;
-let clientes = [];
-let tarifas = {
-    "Normal": { "Rutina": 5000, "Semana": 20000, "Quincena": 40000, "Mensual": 60000 },
-    "Con Entrenadora": { "Rutina": 10000, "Semana": 30000, "Quincena": 60000, "Mensual": 100000 }
-};
-
-// Elementos del DOM
+let currentUser = null, userRole = null, clientes = [];
+let tarifas = {"Normal":{"Rutina":5000,"Semana":20000,"Quincena":40000,"Mensual":60000},"Con Entrenadora":{"Rutina":10000,"Semana":30000,"Quincena":60000,"Mensual":100000}};
 const loginScreen = document.getElementById('login-screen');
 const mainContent = document.getElementById('main-content');
 const loginForm = document.getElementById('login-form');
@@ -20,692 +10,338 @@ const logoutBtn = document.getElementById('logout-btn');
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
-// Helper para Hash SHA-256 (igual que en Python)
-async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
+async function hashPassword(p){const e=new TextEncoder();const d=e.encode(p);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+
+async function supabaseRequest(method,table,params={},jsonData=null){
+    let url=`${SUPABASE_URL}/rest/v1/${table}`;
+    const qp=new URLSearchParams();
+    for(const[k,v]of Object.entries(params))qp.append(k,v);
+    if(qp.toString())url+=`?${qp.toString()}`;
+    const headers={"apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"};
+    if(method==="POST"||method==="PATCH")headers["Prefer"]="return=representation";
+    const opts={method,headers};
+    if(jsonData)opts.body=JSON.stringify(jsonData);
+    try{const r=await fetch(url,opts);if(!r.ok){console.error(`Supabase error: ${r.status}`);return[];}if(r.status===204)return[];return await r.json();}
+    catch(e){console.error("Connection error:",e);return[];}
 }
 
-// Helper para peticiones a Supabase
-async function supabaseRequest(method, table, params = {}, jsonData = null) {
-    let url = `${SUPABASE_URL}/rest/v1/${table}`;
-    
-    // Construir query params
-    const queryParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-        queryParams.append(key, value);
-    }
-    if (queryParams.toString()) {
-        url += `?${queryParams.toString()}`;
-    }
-
-    const headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-    };
-
-    if (method === "POST" || method === "PATCH") {
-        headers["Prefer"] = "return=representation";
-    }
-
-    const options = {
-        method: method,
-        headers: headers
-    };
-
-    if (jsonData) {
-        options.body = JSON.stringify(jsonData);
-    }
-
-    try {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Error en Supabase: ${response.status} - ${errorText}`);
-            return [];
-        }
-        if (response.status === 204) return [];
-        return await response.json();
-    } catch (error) {
-        console.error("Error de conexión:", error);
-        return [];
-    }
-}
-
-// Manejo de Login
-loginForm.addEventListener('submit', async (e) => {
+// LOGIN
+loginForm.addEventListener('submit',async(e)=>{
     e.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    const hashedPassword = await hashPassword(password);
-    
-    const params = {
-        "username": `eq.${username}`,
-        "password": `eq.${hashedPassword}`,
-        "select": "username,rol"
-    };
-    
-    const res = await supabaseRequest("GET", "usuarios", params);
-    
-    if (res && res.length > 0) {
-        currentUser = res[0].username;
-        userRole = res[0].rol;
-        
-        // Mostrar/Ocultar cosas según el rol
-        if (userRole === 'super_admin') {
-            document.getElementById('tab-config').style.display = 'inline-block';
-        }
-        
-        loginScreen.style.display = 'none';
-        mainContent.style.display = 'block';
-        
-        // Cargar datos iniciales
+    const u=document.getElementById('username').value;
+    const p=document.getElementById('password').value;
+    const h=await hashPassword(p);
+    const res=await supabaseRequest("GET","usuarios",{"username":`eq.${u}`,"password":`eq.${h}`,"select":"username,rol"});
+    if(res&&res.length>0){
+        currentUser=res[0].username;userRole=res[0].rol;
+        if(userRole==='super_admin')document.getElementById('tab-config').style.display='inline-flex';
+        loginScreen.style.display='none';mainContent.style.display='block';
         await loadAllData();
-    } else {
-        loginError.style.display = 'block';
-    }
+    }else{loginError.style.display='block';}
 });
+logoutBtn.addEventListener('click',()=>{currentUser=null;userRole=null;loginScreen.style.display='block';mainContent.style.display='none';loginForm.reset();loginError.style.display='none';document.getElementById('tab-config').style.display='none';});
 
-// Logout
-logoutBtn.addEventListener('click', () => {
-    currentUser = null;
-    userRole = null;
-    loginScreen.style.display = 'block';
-    mainContent.style.display = 'none';
-    loginForm.reset();
-    loginError.style.display = 'none';
-});
+// TABS
+tabButtons.forEach(btn=>{btn.addEventListener('click',()=>{
+    const tabId=btn.getAttribute('data-tab');
+    tabButtons.forEach(b=>b.classList.remove('active'));tabContents.forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');document.getElementById(tabId).classList.add('active');
+    if(tabId==='dashboard')loadClientes();
+    if(tabId==='asistencia')loadAsistenciaHoy();
+    if(tabId==='historial')loadHistorialPagos();
+    if(tabId==='hist-asistencia')loadHistorialAsistencia();
+    if(tabId==='configuracion')loadUsuarios();
+});});
 
-// Navegación por Tabs
-tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const tabId = btn.getAttribute('data-tab');
-        
-        tabButtons.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        
-        btn.classList.add('active');
-        document.getElementById(tabId).classList.add('active');
-        
-        // Recargar datos específicos según la pestaña si es necesario
-        if (tabId === 'dashboard') loadClientes();
-        if (tabId === 'asistencia') loadAsistenciaHoy();
-        if (tabId === 'historial') loadHistorialPagos();
-        if (tabId === 'hist-asistencia') loadHistorialAsistencia();
-    });
-});
+async function loadAllData(){await loadTarifas();await loadClientes();await loadMetrics();await loadAsistenciaHoy();populateClientesSelects();}
 
-// Cargar todos los datos
-async function loadAllData() {
-    await loadTarifas();
-    await loadClientes();
-    await loadMetrics();
-    await loadAsistenciaHoy();
-    populateClientesSelects();
+// TARIFAS
+async function loadTarifas(){
+    const res=await supabaseRequest("GET","tarifas",{"select":"categoria,plan_tipo,monto"});
+    if(res&&res.length>0)res.forEach(r=>{if(tarifas[r.categoria])tarifas[r.categoria][r.plan_tipo]=r.monto;});
+    renderTarifas();fillTarifasInputs();
 }
-
-// Cargar Tarifas
-async function loadTarifas() {
-    const res = await supabaseRequest("GET", "tarifas", { "select": "categoria,plan_tipo,monto" });
-    if (res && res.length > 0) {
-        res.forEach(r => {
-            if (tarifas[r.categoria]) {
-                tarifas[r.categoria][r.plan_tipo] = r.monto;
-            }
-        });
-    }
-    renderTarifas();
-    if (typeof fillTarifasInputs === "function") fillTarifasInputs();
+function renderTarifas(){
+    const d=document.getElementById('tarifas-display');
+    let h='<div class="tarifas-container"><div class="tarifa-column"><h3>Plan Normal</h3>';
+    for(const[p,m]of Object.entries(tarifas["Normal"]))h+=`<div class="tarifa-item"><span>${p}</span><span>$${m.toLocaleString()}</span></div>`;
+    h+='</div><div class="tarifa-column"><h3>Con Entrenadora</h3>';
+    for(const[p,m]of Object.entries(tarifas["Con Entrenadora"]))h+=`<div class="tarifa-item"><span>${p}</span><span>$${m.toLocaleString()}</span></div>`;
+    h+='</div></div>';d.innerHTML=h;
 }
-
-// Renderizar Tarifas en la pestaña de pagos
-function renderTarifas() {
-    const normalDiv = document.getElementById('tarifas-normal');
-    const entrenadoraDiv = document.getElementById('tarifas-entrenadora');
-    
-    let htmlNormal = "";
-    for (const [plan, monto] of Object.entries(tarifas["Normal"])) {
-        htmlNormal += `<div class="tarifa-item"><span>${plan}</span><span>$${monto.toLocaleString()}</span></div>`;
-    }
-    normalDiv.innerHTML = htmlNormal;
-    
-    let htmlEntrenadora = "";
-    for (const [plan, monto] of Object.entries(tarifas["Con Entrenadora"])) {
-        htmlEntrenadora += `<div class="tarifa-item"><span>${plan}</span><span>$${monto.toLocaleString()}</span></div>`;
-    }
-    entrenadoraDiv.innerHTML = htmlEntrenadora;
-}
-
-// Cargar Clientes
-async function loadClientes() {
-    const params = {
-        "or": "(borrado.is.null,borrado.eq.false)",
-        "select": "*"
-    };
-    const res = await supabaseRequest("GET", "clientes", params);
-    clientes = res || [];
-    renderDashboard();
-    populateClientesSelects();
-}
-
-// Renderizar Dashboard
-function renderDashboard() {
-    const activosDiv = document.getElementById('clientes-activos');
-    const porVencerDiv = document.getElementById('clientes-por-vencer');
-    const vencidosDiv = document.getElementById('clientes-vencidos');
-    const rutinasDiv = document.getElementById('rutinas-hoy');
-    
-    activosDiv.innerHTML = "";
-    porVencerDiv.innerHTML = "";
-    vencidosDiv.innerHTML = "";
-    rutinasDiv.innerHTML = "";
-    
-    const hoy = new Date();
-    hoy.setHours(0,0,0,0);
-    
-    clientes.forEach(c => {
-        if (c.nombre === "CLIENTE CASUAL") return;
-        
-        const vencimiento = new Date(c.fecha_vencimiento);
-        vencimiento.setHours(0,0,0,0);
-        
-        const diffTime = vencimiento - hoy;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        const card = document.createElement('div');
-        card.className = "client-card";
-        
-        let badgeClass = "badge-active";
-        let badgeText = "Activo";
-        let daysText = `${diffDays} días`;
-        
-        if (diffDays < 0) {
-            badgeClass = "badge-expired";
-            badgeText = "Vencido";
-            daysText = `${Math.abs(diffDays)} días`;
-        } else if (diffDays <= 3) {
-            badgeClass = "badge-warning";
-            badgeText = "Alerta";
-        }
-        
-        card.innerHTML = `
-            <div>
-                <div class="client-name">${c.nombre}</div>
-                <div class="badge-plan">${c.plan_actual || 'Plan'}</div>
-                <div class="client-info">Vence: <span class="highlight">${c.fecha_vencimiento}</span> <span class="days-badge">${daysText}</span></div>
-            </div>
-            <div>
-                <span class="badge ${badgeClass}">${badgeText}</span>
-            </div>
-        `;
-        
-        // Agregar botón de WhatsApp si está por vencer o vencido
-        if (diffDays <= 3 && c.telefono) {
-            const telLimpio = c.telefono.replace(/\D/g, '');
-            const msg = diffDays < 0 
-                ? `Hola ${c.nombre}, tu plan en MARY'S GYM ya venció. Te invitamos a renovarlo. ¡Gracias!`
-                : `Hola ${c.nombre}, te recordamos que tu plan en MARY'S GYM está por vencer. ¡Te esperamos!`;
-            
-            const waLink = `https://wa.me/${telLimpio}?text=${encodeURIComponent(msg)}`;
-            const waDiv = document.createElement('div');
-            waDiv.style.textAlign = "right";
-            waDiv.style.marginTop = "5px";
-            waDiv.innerHTML = `<a href="${waLink}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
-            card.querySelector('div').appendChild(waDiv);
-        }
-        
-        // Clasificar según días
-        if (c.plan_actual === "Rutina" && c.fecha_ultimo_pago === hoy.toISOString().split('T')[0]) {
-            // Rutinas de hoy van abajo
-            const rutinaCard = card.cloneNode(true);
-            rutinaCard.querySelector('.badge').className = "badge badge-active";
-            rutinaCard.querySelector('.badge').innerText = "Hoy";
-            rutinasDiv.appendChild(rutinaCard);
-        } else if (c.plan_actual !== "Rutina") {
-            if (diffDays < 0) {
-                vencidosDiv.appendChild(card);
-            } else if (diffDays <= 3) {
-                porVencerDiv.appendChild(card);
-            } else {
-                activosDiv.appendChild(card);
-            }
-        }
+function fillTarifasInputs(){
+    ["Rutina","Semana","Quincena","Mensual"].forEach(p=>{
+        const ni=document.getElementById(`tn-${p.toLowerCase()}`);const ei=document.getElementById(`te-${p.toLowerCase()}`);
+        if(ni)ni.value=tarifas["Normal"][p];if(ei)ei.value=tarifas["Con Entrenadora"][p];
     });
 }
 
-// Poblar Selects de Clientes
-function populateClientesSelects() {
-    const selectPago = document.getElementById('cliente-select');
-    const selectAsistencia = document.getElementById('asistencia-cliente');
-    const selectEdit = document.getElementById('edit-cliente-select');
-    
-    // Guardar selección actual
-    const selPagoVal = selectPago.value;
-    
-    selectPago.innerHTML = '<option value="-- NUEVO CLIENTE --">-- NUEVO CLIENTE --</option>';
-    selectAsistencia.innerHTML = '';
-    selectEdit.innerHTML = '';
-    
-    // Ordenar clientes por nombre
-    const clientesOrdenados = [...clientes].sort((a, b) => a.nombre.localeCompare(b.nombre));
-    
-    clientesOrdenados.forEach(c => {
-        if (c.nombre === "CLIENTE CASUAL") return;
-        
-        const option = document.createElement('option');
-        option.value = c.nombre;
-        option.innerText = c.nombre;
-        
-        selectPago.appendChild(option.cloneNode(true));
-        selectEdit.appendChild(option.cloneNode(true));
-        
-        // Para asistencia, solo los que tienen planes vigentes (aproximado en JS)
-        if (["Semana", "Quincena", "Mensual"].includes(c.plan_actual)) {
-            selectAsistencia.appendChild(option.cloneNode(true));
+// CLIENTES
+async function loadClientes(){
+    const res=await supabaseRequest("GET","clientes",{"nombre":"neq.CLIENTE CASUAL","or":"(borrado.is.null,borrado.eq.false)","select":"*"});
+    clientes=res||[];renderDashboard();populateClientesSelects();
+}
+function renderDashboard(){
+    const aDiv=document.getElementById('clientes-activos'),pDiv=document.getElementById('clientes-por-vencer'),vDiv=document.getElementById('clientes-vencidos'),rDiv=document.getElementById('rutinas-hoy');
+    aDiv.innerHTML='';pDiv.innerHTML='';vDiv.innerHTML='';rDiv.innerHTML='';
+    const hoy=new Date();hoy.setHours(0,0,0,0);
+    const sorted=[...clientes].sort((a,b)=>{const da=new Date(a.fecha_vencimiento),db=new Date(b.fecha_vencimiento);return da-db;});
+    sorted.forEach(c=>{
+        const venc=new Date(c.fecha_vencimiento);venc.setHours(0,0,0,0);
+        const diff=Math.ceil((venc-hoy)/(1000*60*60*24));
+        const isRutina=c.plan_actual==="Rutina";
+        const isRutinaHoy=isRutina&&c.fecha_ultimo_pago===hoy.toISOString().split('T')[0];
+        if(isRutina&&isRutinaHoy){
+            rDiv.innerHTML+=`<div class="client-card"><div><div class="client-name">${c.nombre}</div><div class="badge-plan">RUTINA</div></div><div><span class="badge badge-active">Hoy</span></div></div>`;
+            return;
         }
+        if(isRutina)return;
+        let badge,bclass,dtext;
+        if(diff<0){badge="Vencido";bclass="badge-expired";dtext=`${Math.abs(diff)} días`;}
+        else if(diff<=3){badge="Alerta";bclass="badge-warning";dtext=`${diff} días`;}
+        else{badge="Activo";bclass="badge-active";dtext=`${diff} días`;}
+        const vLabel=diff<0?"Venció":"Vence";
+        let card=`<div class="client-card"><div><div class="client-name">${c.nombre}</div><div class="badge-plan">${c.plan_actual||'Plan'}</div><div class="client-info">${vLabel}: <span class="highlight">${c.fecha_vencimiento}</span> <span class="days-badge">${dtext}</span></div>`;
+        if(diff<=3&&c.telefono){
+            const tel=c.telefono.replace(/\D/g,'');
+            const msg=diff<0?`Hola ${c.nombre}, tu plan en MARY'S GYM ya venció. Te invitamos a renovarlo. ¡Gracias!`:`Hola ${c.nombre}, te recordamos que tu plan en MARY'S GYM está por vencer. ¡Te esperamos!`;
+            card+=`<div style="text-align:right;margin-top:5px;"><a href="https://wa.me/${tel}?text=${encodeURIComponent(msg)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>`;
+        }
+        card+=`</div><div><span class="badge ${bclass}">${badge}</span></div></div>`;
+        if(diff<0)vDiv.innerHTML+=card;else if(diff<=3)pDiv.innerHTML+=card;else aDiv.innerHTML+=card;
     });
-    
-    selectPago.value = selPagoVal;
+    if(!rDiv.innerHTML)rDiv.innerHTML='<p style="color:#A8B5C7;">No hay clientes con plan de Rutina registrados hoy.</p>';
 }
 
-// Manejo de formulario de pago
-const clienteSelect = document.getElementById('cliente-select');
-const nuevoClienteFields = document.getElementById('nuevo-cliente-fields');
+function populateClientesSelects(){
+    const sP=document.getElementById('cliente-select'),sA=document.getElementById('asistencia-cliente'),sE=document.getElementById('edit-cliente-select');
+    const selVal=sP.value;
+    sP.innerHTML='<option value="-- NUEVO CLIENTE --">-- NUEVO CLIENTE --</option>';sA.innerHTML='';sE.innerHTML='';
+    const ord=[...clientes].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    const planesLargos=ord.filter(c=>["Semana","Quincena","Mensual"].includes(c.plan_actual));
+    ord.forEach(c=>{
+        sP.innerHTML+=`<option value="${c.nombre}">${c.nombre}</option>`;
+    });
+    planesLargos.forEach(c=>{
+        sE.innerHTML+=`<option value="${c.nombre}">${c.nombre}</option>`;
+    });
+    // Asistencia: solo planes largos que NO asistieron hoy (se filtra en loadAsistenciaHoy)
+    sP.value=selVal;
+}
 
-clienteSelect.addEventListener('change', () => {
-    if (clienteSelect.value === "-- NUEVO CLIENTE --") {
-        nuevoClienteFields.style.display = 'block';
-        document.getElementById('pago-telefono').value = '';
-    } else {
-        nuevoClienteFields.style.display = 'none';
-        const cliente = clientes.find(c => c.nombre === clienteSelect.value);
-        if (cliente) {
-            document.getElementById('pago-telefono').value = cliente.telefono ? cliente.telefono.slice(-10) : '';
-        }
+// PAGO
+const clienteSelect=document.getElementById('cliente-select');
+const nuevoFields=document.getElementById('nuevo-cliente-fields');
+const renovandoInfo=document.getElementById('renovando-info');
+clienteSelect.addEventListener('change',()=>{
+    if(clienteSelect.value==="-- NUEVO CLIENTE --"){
+        nuevoFields.style.display='block';renovandoInfo.style.display='none';
+        document.getElementById('pago-telefono').value='';
+    }else{
+        nuevoFields.style.display='none';renovandoInfo.style.display='block';
+        document.getElementById('renovando-nombre').innerText=clienteSelect.value;
+        const cl=clientes.find(c=>c.nombre===clienteSelect.value);
+        if(cl)document.getElementById('pago-telefono').value=cl.telefono?cl.telefono.slice(-10):'';
     }
 });
 
-document.getElementById('pago-form').addEventListener('submit', async (e) => {
+document.getElementById('pago-form').addEventListener('submit',async(e)=>{
     e.preventDefault();
-    
-    const isNuevo = clienteSelect.value === "-- NUEVO CLIENTE --";
-    const nombre = isNuevo ? document.getElementById('nuevo-nombre').value : clienteSelect.value;
-    const telefono = document.getElementById('pago-telefono').value;
-    const plan = document.getElementById('pago-plan').value;
-    const entrenadora = document.getElementById('pago-entrenadora').checked;
-    const metodo = document.getElementById('pago-metodo').value;
-    
-    if (!nombre) {
-        alert("El nombre es obligatorio");
-        return;
+    const isNuevo=clienteSelect.value==="-- NUEVO CLIENTE --";
+    const nombre=isNuevo?document.getElementById('nuevo-nombre').value:clienteSelect.value;
+    const telefono=document.getElementById('pago-telefono').value;
+    const plan=document.getElementById('pago-plan').value;
+    const entrenadora=document.getElementById('pago-entrenadora').checked;
+    const metodo=document.getElementById('pago-metodo').value;
+    if(!nombre){alert("Por favor completa el nombre.");return;}
+    if(telefono&&telefono.length!==10){alert("El teléfono debe tener 10 dígitos.");return;}
+    const telNorm=telefono.length===10?"57"+telefono:telefono;
+    const hoy=new Date();let venc=new Date(hoy);
+    if(plan==="Rutina")venc=new Date(hoy);
+    if(plan==="Semana")venc.setDate(hoy.getDate()+6);
+    if(plan==="Quincena")venc.setDate(hoy.getDate()+14);
+    if(plan==="Mensual"){venc.setMonth(hoy.getMonth()+1);venc.setDate(venc.getDate()-1);}
+    const fPago=hoy.toISOString().split('T')[0],fVenc=venc.toISOString().split('T')[0];
+    let clienteId=null;
+    // Buscar si existe
+    const existing=await supabaseRequest("GET","clientes",{"nombre":`eq.${nombre}`,"select":"id"});
+    if(existing&&existing.length>0){
+        clienteId=existing[0].id;
+        await supabaseRequest("PATCH","clientes",{"id":`eq.${clienteId}`},{telefono:telNorm,fecha_ultimo_pago:fPago,fecha_vencimiento:fVenc,plan_actual:plan,con_entrenadora:entrenadora});
+    }else{
+        const res=await supabaseRequest("POST","clientes",{},{nombre,telefono:telNorm,fecha_ultimo_pago:fPago,fecha_vencimiento:fVenc,plan_actual:plan,con_entrenadora:entrenadora});
+        if(res&&res.length>0)clienteId=res[0].id;
     }
-    
-    const telefonoNorm = telefono.length === 10 ? "57" + telefono : telefono;
-    
-    // Calcular vencimiento
-    const hoy = new Date();
-    let vencimiento = new Date();
-    if (plan === "Rutina") vencimiento = hoy;
-    if (plan === "Semana") vencimiento.setDate(hoy.getDate() + 6);
-    if (plan === "Quincena") vencimiento.setDate(hoy.getDate() + 14);
-    if (plan === "Mensual") vencimiento.setMonth(hoy.getMonth() + 1);
-    
-    const fechaUltimoPago = hoy.toISOString().split('T')[0];
-    const fechaVencimiento = vencimiento.toISOString().split('T')[0];
-    
-    let clienteId = null;
-    
-    if (isNuevo) {
-        // Insertar cliente
-        const res = await supabaseRequest("POST", "clientes", {}, {
-            nombre: nombre,
-            telefono: telefonoNorm,
-            fecha_ultimo_pago: fechaUltimoPago,
-            fecha_vencimiento: fechaVencimiento,
-            plan_actual: plan,
-            con_entrenadora: entrenadora
-        });
-        if (res && res.length > 0) clienteId = res[0].id;
-    } else {
-        // Actualizar cliente
-        const cliente = clientes.find(c => c.nombre === nombre);
-        if (cliente) {
-            clienteId = cliente.id;
-            await supabaseRequest("PATCH", "clientes", { "id": `eq.${clienteId}` }, {
-                telefono: telefonoNorm,
-                fecha_ultimo_pago: fechaUltimoPago,
-                fecha_vencimiento: fechaVencimiento,
-                plan_actual: plan,
-                con_entrenadora: entrenadora
-            });
-        }
-    }
-    
-    if (clienteId) {
-        // Registrar pago
-        const categoria = entrenadora ? "Con Entrenadora" : "Normal";
-        const monto = tarifas[categoria][plan];
-        
-        await supabaseRequest("POST", "pagos", {}, {
-            cliente_id: clienteId,
-            monto: monto,
-            fecha: fechaUltimoPago,
-            plan_tipo: plan,
-            metodo_pago: metodo,
-            con_entrenadora: entrenadora
-        });
-        
-        alert("Pago registrado con éxito");
-        await loadAllData();
-        document.getElementById('pago-form').reset();
-        nuevoClienteFields.style.display = 'block';
+    if(clienteId){
+        const cat=entrenadora?"Con Entrenadora":"Normal";
+        await supabaseRequest("POST","pagos",{},{cliente_id:clienteId,monto:tarifas[cat][plan],fecha:fPago,plan_tipo:plan,metodo_pago:metodo,con_entrenadora:entrenadora});
+        alert(`¡Pago registrado para ${nombre}!`);
+        await loadAllData();document.getElementById('pago-form').reset();nuevoFields.style.display='block';renovandoInfo.style.display='none';
     }
 });
 
-// Cargar Asistencia Hoy
-async function loadAsistenciaHoy() {
-    const hoy = new Date().toISOString().split('T')[0];
-    const params = {
-        "fecha": `gte.${hoy}T00:00:00`,
-        "select": "fecha,clientes!inner(nombre)"
-    };
-    const res = await supabaseRequest("GET", "asistencia", params);
-    
-    const tablaDiv = document.getElementById('tabla-asistencia-hoy');
-    if (res && res.length > 0) {
-        let html = `
-            <div class="custom-table-container">
-                <table class="custom-table">
-                    <thead>
-                        <tr><th>Nombre</th><th>Día</th><th>Hora</th></tr>
-                    </thead>
-                    <tbody>
-        `;
-        res.forEach(r => {
-            const dt = new Date(r.fecha);
-            html += `
-                <tr>
-                    <td>${r.clientes.nombre}</td>
-                    <td>${dt.toLocaleDateString()}</td>
-                    <td>${dt.toLocaleTimeString()}</td>
-                </tr>
-            `;
-        });
-        html += "</tbody></table></div>";
-        tablaDiv.innerHTML = html;
-    } else {
-        tablaDiv.innerHTML = "<p>No hay asistencia registrada hoy.</p>";
+// ASISTENCIA
+async function loadAsistenciaHoy(){
+    const hoy=new Date().toISOString().split('T')[0];
+    const res=await supabaseRequest("GET","asistencia",{"fecha":`gte.${hoy}T00:00:00`,"select":"fecha,clientes!inner(nombre)"});
+    const tablaDiv=document.getElementById('tabla-asistencia-hoy');
+    const asistidosHoy=res?res.map(r=>r.clientes.nombre):[];
+    // Actualizar select de asistencia: solo planes largos que NO asistieron hoy
+    const sA=document.getElementById('asistencia-cliente');sA.innerHTML='';
+    const planesLargos=clientes.filter(c=>["Semana","Quincena","Mensual"].includes(c.plan_actual));
+    const porAsistir=planesLargos.filter(c=>!asistidosHoy.includes(c.nombre));
+    porAsistir.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    porAsistir.forEach(c=>{sA.innerHTML+=`<option value="${c.nombre}">${c.nombre}</option>`;});
+    if(porAsistir.length===0&&planesLargos.length>0){
+        sA.innerHTML='<option value="">¡Todos ya registraron asistencia!</option>';
     }
+    if(res&&res.length>0){
+        let h='<div class="custom-table-container"><table class="custom-table"><thead><tr><th>Nombre</th><th>Día</th><th>Hora</th></tr></thead><tbody>';
+        res.forEach(r=>{const dt=new Date(r.fecha);h+=`<tr><td>${r.clientes.nombre}</td><td>${dt.toLocaleDateString()}</td><td>${dt.toLocaleTimeString()}</td></tr>`;});
+        h+='</tbody></table></div>';tablaDiv.innerHTML=h;
+    }else{tablaDiv.innerHTML='<p style="color:#A8B5C7;">No hay asistencia registrada hoy.</p>';}
 }
-
-// Registrar Asistencia
-document.getElementById('asistencia-form').addEventListener('submit', async (e) => {
+document.getElementById('asistencia-form').addEventListener('submit',async(e)=>{
     e.preventDefault();
-    const nombre = document.getElementById('asistencia-cliente').value;
-    const cliente = clientes.find(c => c.nombre === nombre);
-    
-    if (cliente) {
-        await supabaseRequest("POST", "asistencia", {}, {
-            cliente_id: cliente.id
-        });
-        alert(`Asistencia registrada para ${nombre}`);
+    const nombre=document.getElementById('asistencia-cliente').value;
+    if(!nombre||nombre==='¡Todos ya registraron asistencia!')return;
+    const cl=clientes.find(c=>c.nombre===nombre);
+    if(cl){
+        // Check if already registered today
+        const hoy=new Date().toISOString().split('T')[0];
+        const check=await supabaseRequest("GET","asistencia",{"cliente_id":`eq.${cl.id}`,"fecha":`gte.${hoy}T00:00:00`,"select":"id"});
+        if(!check||check.length===0){
+            await supabaseRequest("POST","asistencia",{},{cliente_id:parseInt(cl.id)});
+            alert(`¡Asistencia registrada para ${nombre}!`);
+        }else{alert(`${nombre} ya registró asistencia hoy.`);}
         await loadAsistenciaHoy();
     }
 });
 
-// Cargar Métricas
-async function loadMetrics() {
-    const hoy = new Date().toISOString().split('T')[0];
-    
-    // Ingresos Hoy
-    const resHoy = await supabaseRequest("GET", "pagos", { "fecha": `eq.${hoy}`, "select": "monto" });
-    const totalHoy = resHoy ? resHoy.reduce((acc, curr) => acc + curr.monto, 0) : 0;
-    document.getElementById('metric-hoy').innerText = `$${totalHoy.toLocaleString()}`;
-    
-    // Esta Semana (Aproximado en JS)
-    const hoyDate = new Date();
-    const dayOfWeek = hoyDate.getDay(); // 0 is Sunday
-    const diff = hoyDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust to Monday
-    const startOfWeek = new Date(hoyDate.setDate(diff)).toISOString().split('T')[0];
-    
-    const resSemana = await supabaseRequest("GET", "pagos", { "fecha": `gte.${startOfWeek}`, "select": "monto" });
-    const totalSemana = resSemana ? resSemana.reduce((acc, curr) => acc + curr.monto, 0) : 0;
-    document.getElementById('metric-semana').innerText = `$${totalSemana.toLocaleString()}`;
-    
-    // Este Mes
-    const startOfMonth = new Date(hoyDate.getFullYear(), hoyDate.getMonth(), 1).toISOString().split('T')[0];
-    const resMes = await supabaseRequest("GET", "pagos", { "fecha": `gte.${startOfMonth}`, "select": "monto" });
-    const totalMes = resMes ? resMes.reduce((acc, curr) => acc + curr.monto, 0) : 0;
-    document.getElementById('metric-mes').innerText = `$${totalMes.toLocaleString()}`;
+// MÉTRICAS
+async function loadMetrics(){
+    const hoy=new Date();const hoyStr=hoy.toISOString().split('T')[0];
+    const rH=await supabaseRequest("GET","pagos",{"fecha":`eq.${hoyStr}`,"select":"monto"});
+    document.getElementById('metric-hoy').innerText=`$${(rH?rH.reduce((a,c)=>a+c.monto,0):0).toLocaleString()}`;
+    const dow=hoy.getDay();const diff2=hoy.getDate()-dow+(dow===0?-6:1);
+    const sow=new Date(hoy.getFullYear(),hoy.getMonth(),diff2).toISOString().split('T')[0];
+    const rS=await supabaseRequest("GET","pagos",{"fecha":`gte.${sow}`,"select":"monto"});
+    document.getElementById('metric-semana').innerText=`$${(rS?rS.reduce((a,c)=>a+c.monto,0):0).toLocaleString()}`;
+    const som=new Date(hoy.getFullYear(),hoy.getMonth(),1).toISOString().split('T')[0];
+    const rM=await supabaseRequest("GET","pagos",{"fecha":`gte.${som}`,"select":"monto"});
+    document.getElementById('metric-mes').innerText=`$${(rM?rM.reduce((a,c)=>a+c.monto,0):0).toLocaleString()}`;
 }
 
-// Cargar Historial de Pagos
-async function loadHistorialPagos() {
-    const params = {
-        "select": "fecha,monto,plan_tipo,metodo_pago,con_entrenadora,clientes!inner(nombre)",
-        "order": "fecha.desc"
-    };
-    const res = await supabaseRequest("GET", "pagos", params);
-    const container = document.getElementById('historial-pagos-container');
-    
-    if (res && res.length > 0) {
-        let html = `
-            <div class="custom-table-container">
-                <table class="custom-table">
-                    <thead>
-                        <tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Plan</th><th>Método</th><th>Entrenadora</th></tr>
-                    </thead>
-                    <tbody>
-        `;
-        res.forEach(r => {
-            html += `
-                <tr>
-                    <td>${r.fecha}</td>
-                    <td>${r.clientes.nombre}</td>
-                    <td>$${r.monto.toLocaleString()}</td>
-                    <td>${r.plan_tipo}</td>
-                    <td>${r.metodo_pago}</td>
-                    <td>${r.con_entrenadora ? "Sí" : "No"}</td>
-                </tr>
-            `;
-        });
-        html += "</tbody></table></div>";
-        container.innerHTML = html;
-    } else {
-        container.innerHTML = "<p>No hay historial de pagos.</p>";
+// HISTORIAL PAGOS (agrupado por mes con expandibles)
+const mesesEs=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+async function loadHistorialPagos(){
+    const res=await supabaseRequest("GET","pagos",{"select":"fecha,monto,plan_tipo,metodo_pago,con_entrenadora,clientes!inner(nombre)","order":"fecha.desc"});
+    const container=document.getElementById('historial-pagos-container');
+    if(!res||res.length===0){container.innerHTML='<p style="color:#A8B5C7;">No hay historial de pagos.</p>';return;}
+    const grupos={};const now=new Date();
+    res.forEach(r=>{const d=new Date(r.fecha);const key=`${d.getFullYear()}-${d.getMonth()}`;if(!grupos[key])grupos[key]={ano:d.getFullYear(),mes:d.getMonth(),items:[]};grupos[key].items.push(r);});
+    let html='';
+    for(const key of Object.keys(grupos)){
+        const g=grupos[key];const isCurrentMonth=(g.ano===now.getFullYear()&&g.mes===now.getMonth());
+        html+=`<div class="expander-container"><div class="expander-header ${isCurrentMonth?'open':''}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');"><span>Mes: ${mesesEs[g.mes]} ${g.ano}</span><span class="arrow">▼</span></div>`;
+        html+=`<div class="expander-body ${isCurrentMonth?'open':''}"><div class="custom-table-container"><table class="custom-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Plan</th><th>Método</th><th>Entrenadora</th></tr></thead><tbody>`;
+        g.items.forEach(r=>{html+=`<tr><td>${r.fecha}</td><td>${r.clientes.nombre}</td><td>$${parseInt(r.monto).toLocaleString()}</td><td>${r.plan_tipo||''}</td><td>${r.metodo_pago||''}</td><td>${r.con_entrenadora?'Sí':'No'}</td></tr>`;});
+        html+='</tbody></table></div></div></div>';
     }
+    container.innerHTML=html;
 }
 
-// Cargar Historial de Asistencia
-async function loadHistorialAsistencia() {
-    const params = {
-        "select": "fecha,clientes!inner(nombre)",
-        "order": "fecha.desc"
-    };
-    const res = await supabaseRequest("GET", "asistencia", params);
-    const container = document.getElementById('historial-asistencia-container');
-    
-    if (res && res.length > 0) {
-        let html = `
-            <div class="custom-table-container">
-                <table class="custom-table">
-                    <thead>
-                        <tr><th>Nombre</th><th>Día</th><th>Hora</th></tr>
-                    </thead>
-                    <tbody>
-        `;
-        res.forEach(r => {
-            const dt = new Date(r.fecha);
-            html += `
-                <tr>
-                    <td>${r.clientes.nombre}</td>
-                    <td>${dt.toLocaleDateString()}</td>
-                    <td>${dt.toLocaleTimeString()}</td>
-                </tr>
-            `;
-        });
-        html += "</tbody></table></div>";
-        container.innerHTML = html;
-    } else {
-        container.innerHTML = "<p>No hay historial de asistencia.</p>";
+// HISTORIAL ASISTENCIA (agrupado por mes)
+async function loadHistorialAsistencia(){
+    const res=await supabaseRequest("GET","asistencia",{"select":"fecha,clientes!inner(nombre)","order":"fecha.desc"});
+    const container=document.getElementById('historial-asistencia-container');
+    if(!res||res.length===0){container.innerHTML='<p style="color:#A8B5C7;">No hay historial de asistencia.</p>';return;}
+    const grupos={};const now=new Date();
+    res.forEach(r=>{const d=new Date(r.fecha);const key=`${d.getFullYear()}-${d.getMonth()}`;if(!grupos[key])grupos[key]={ano:d.getFullYear(),mes:d.getMonth(),items:[]};grupos[key].items.push(r);});
+    let html='';
+    for(const key of Object.keys(grupos)){
+        const g=grupos[key];const isCurrentMonth=(g.ano===now.getFullYear()&&g.mes===now.getMonth());
+        html+=`<div class="expander-container"><div class="expander-header ${isCurrentMonth?'open':''}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');"><span>Mes: ${mesesEs[g.mes]} ${g.ano}</span><span class="arrow">▼</span></div>`;
+        html+=`<div class="expander-body ${isCurrentMonth?'open':''}"><div class="custom-table-container"><table class="custom-table"><thead><tr><th>Nombre</th><th>Día</th><th>Hora</th></tr></thead><tbody>`;
+        g.items.forEach(r=>{const dt=new Date(r.fecha);html+=`<tr><td>${r.clientes.nombre}</td><td>${dt.toLocaleDateString()}</td><td>${dt.toLocaleTimeString()}</td></tr>`;});
+        html+='</tbody></table></div></div></div>';
     }
+    container.innerHTML=html;
 }
 
-function fillTarifasInputs() {
-    const plans = ["Rutina", "Semana", "Quincena", "Mensual"];
-    plans.forEach(plan => {
-        const normalInput = document.getElementById(`tn-${plan.toLowerCase()}`);
-        const entrenadoraInput = document.getElementById(`te-${plan.toLowerCase()}`);
-        if (normalInput) normalInput.value = tarifas["Normal"][plan];
-        if (entrenadoraInput) entrenadoraInput.value = tarifas["Con Entrenadora"][plan];
-    });
+// GESTIONAR - Edit
+const editSelect=document.getElementById('edit-cliente-select');
+const deleteMontoInput=document.getElementById('delete-monto');
+let currentLastPagoId=null;
+editSelect.addEventListener('change',async()=>{
+    const cl=clientes.find(c=>c.nombre===editSelect.value);
+    if(cl){
+        document.getElementById('edit-nombre').value=cl.nombre;
+        document.getElementById('edit-telefono').value=cl.telefono?cl.telefono.slice(-10):'';
+        document.getElementById('edit-vencimiento').value=cl.fecha_vencimiento;
+        const plans=["Rutina","Semana","Quincena","Mensual"];
+        document.getElementById('edit-plan').value=plans.includes(cl.plan_actual)?cl.plan_actual:'Rutina';
+        const pagos=await supabaseRequest("GET","pagos",{"cliente_id":`eq.${cl.id}`,"select":"id,monto,notas","order":"id.desc","limit":"1"});
+        if(pagos&&pagos.length>0){deleteMontoInput.value=pagos[0].monto;currentLastPagoId=pagos[0].id;}
+        else{deleteMontoInput.value=0;currentLastPagoId=null;}
+    }
+});
+document.getElementById('edit-cliente-form').addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const cl=clientes.find(c=>c.nombre===editSelect.value);
+    if(!cl)return;
+    const nn=document.getElementById('edit-nombre').value;
+    const nt=document.getElementById('edit-telefono').value;
+    if(!nn){alert("El nombre no puede estar vacío.");return;}
+    if(nt&&nt.length!==10){alert("El teléfono debe tener 10 dígitos.");return;}
+    const telNorm=nt.length===10?"57"+nt:nt;
+    await supabaseRequest("PATCH","clientes",{"id":`eq.${cl.id}`},{nombre:nn,telefono:telNorm,fecha_vencimiento:document.getElementById('edit-vencimiento').value,plan_actual:document.getElementById('edit-plan').value});
+    alert(`¡Datos de ${nn} actualizados!`);await loadClientes();
+});
+document.getElementById('delete-cliente-form').addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const cl=clientes.find(c=>c.nombre===editSelect.value);
+    if(!cl)return;
+    await supabaseRequest("PATCH","clientes",{"id":`eq.${cl.id}`},{borrado:true});
+    if(currentLastPagoId){
+        await supabaseRequest("PATCH","pagos",{"id":`eq.${currentLastPagoId}`},{monto:parseFloat(deleteMontoInput.value),notas:document.getElementById('delete-motivo').value});
+    }
+    alert(`¡Cliente ${cl.nombre} eliminado y pago ajustado!`);
+    await loadClientes();document.getElementById('delete-cliente-form').reset();
+});
+
+// CONFIGURACIÓN
+document.getElementById('user-form').addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const u=document.getElementById('new-username').value,p=document.getElementById('new-password').value,r=document.getElementById('new-rol').value;
+    if(!u||!p){alert("Todos los campos son obligatorios.");return;}
+    const h=await hashPassword(p);
+    const res=await supabaseRequest("POST","usuarios",{},{username:u,password:h,rol:r});
+    if(res&&res.length>0){alert(`¡Usuario ${u} creado con éxito!`);document.getElementById('user-form').reset();}
+    else alert("Error al crear usuario (puede que ya exista).");
+});
+async function loadUsuarios(){
+    const res=await supabaseRequest("GET","usuarios",{"select":"username,rol"});
+    const c=document.getElementById('tabla-usuarios');
+    if(res&&res.length>0){
+        let h='<div class="custom-table-container"><table class="custom-table"><thead><tr><th>Usuario</th><th>Rol</th></tr></thead><tbody>';
+        res.forEach(r=>{h+=`<tr><td>${r.username}</td><td>${r.rol}</td></tr>`;});
+        h+='</tbody></table></div>';c.innerHTML=h;
+    }else c.innerHTML='<p style="color:#A8B5C7;">No hay usuarios.</p>';
 }
-
-// === GESTIONAR CLIENTES (EDITAR Y ELIMINAR) ===
-
-const editSelect = document.getElementById('edit-cliente-select');
-const deleteMontoInput = document.getElementById('delete-monto');
-let currentLastPagoId = null;
-
-editSelect.addEventListener('change', async () => {
-    const nombre = editSelect.value;
-    const cliente = clientes.find(c => c.nombre === nombre);
-    
-    if (cliente) {
-        // Llenar formulario de edición
-        document.getElementById('edit-nombre').value = cliente.nombre;
-        document.getElementById('edit-telefono').value = cliente.telefono ? cliente.telefono.slice(-10) : '';
-        document.getElementById('edit-vencimiento').value = cliente.fecha_vencimiento;
-        document.getElementById('edit-plan').value = cliente.plan_actual || 'Rutina';
-        
-        // Buscar último pago para el formulario de eliminación
-        const params = {
-            "cliente_id": `eq.${cliente.id}`,
-            "select": "id,monto,notas",
-            "order": "id.desc",
-            "limit": "1"
-        };
-        const pagos = await supabaseRequest("GET", "pagos", params);
-        if (pagos && pagos.length > 0) {
-            deleteMontoInput.value = pagos[0].monto;
-            currentLastPagoId = pagos[0].id;
-        } else {
-            deleteMontoInput.value = 0;
-            currentLastPagoId = null;
-        }
-    }
-});
-
-// Guardar Cambios (Editar)
-document.getElementById('edit-cliente-form').addEventListener('submit', async (e) => {
+document.getElementById('tarifas-normal-form').addEventListener('submit',async(e)=>{
     e.preventDefault();
-    const nombreSel = editSelect.value;
-    const cliente = clientes.find(c => c.nombre === nombreSel);
-    
-    if (cliente) {
-        const nuevoNombre = document.getElementById('edit-nombre').value;
-        const nuevoTel = document.getElementById('edit-telefono').value;
-        const nuevoVencimiento = document.getElementById('edit-vencimiento').value;
-        const nuevoPlan = document.getElementById('edit-plan').value;
-        
-        const telefonoNorm = nuevoTel.length === 10 ? "57" + nuevoTel : nuevoTel;
-        
-        await supabaseRequest("PATCH", "clientes", { "id": `eq.${cliente.id}` }, {
-            nombre: nuevoNombre,
-            telefono: telefonoNorm,
-            fecha_vencimiento: nuevoVencimiento,
-            plan_actual: nuevoPlan
-        });
-        
-        alert(`Datos de ${nuevoNombre} actualizados`);
-        await loadClientes();
+    for(const p of["Rutina","Semana","Quincena","Mensual"]){
+        const m=parseFloat(document.getElementById(`tn-${p.toLowerCase()}`).value);
+        await supabaseRequest("PATCH","tarifas",{"categoria":"eq.Normal","plan_tipo":`eq.${p}`},{monto:m});
     }
+    alert("¡Tarifas normales actualizadas!");await loadTarifas();
 });
-
-// Eliminar Cliente
-document.getElementById('delete-cliente-form').addEventListener('submit', async (e) => {
+document.getElementById('tarifas-entrenadora-form').addEventListener('submit',async(e)=>{
     e.preventDefault();
-    const nombreSel = editSelect.value;
-    const cliente = clientes.find(c => c.nombre === nombreSel);
-    
-    if (cliente) {
-        const motivo = document.getElementById('delete-motivo').value;
-        const montoFinal = parseFloat(document.getElementById('delete-monto').value);
-        
-        // 1. Marcar como borrado
-        await supabaseRequest("PATCH", "clientes", { "id": `eq.${cliente.id}` }, {
-            borrado: true
-        });
-        
-        // 2. Actualizar último pago si existe
-        if (currentLastPagoId) {
-            await supabaseRequest("PATCH", "pagos", { "id": `eq.${currentLastPagoId}` }, {
-                monto: montoFinal,
-                notas: motivo
-            });
-        }
-        
-        alert(`Cliente ${cliente.nombre} eliminado y pago ajustado.`);
-        await loadClientes();
-        document.getElementById('delete-cliente-form').reset();
+    for(const p of["Rutina","Semana","Quincena","Mensual"]){
+        const m=parseFloat(document.getElementById(`te-${p.toLowerCase()}`).value);
+        await supabaseRequest("PATCH","tarifas",{"categoria":"eq.Con Entrenadora","plan_tipo":`eq.${p}`},{monto:m});
     }
-});
-
-// === CONFIGURACIÓN (CREAR USUARIO Y TARIFAS) ===
-
-// Crear Usuario
-document.getElementById('user-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('new-username').value;
-    const pass = document.getElementById('new-password').value;
-    const rol = document.getElementById('new-rol').value;
-    
-    const hashedPass = await hashPassword(pass);
-    
-    const res = await supabaseRequest("POST", "usuarios", {}, {
-        username: username,
-        password: hashedPass,
-        rol: rol
-    });
-    
-    if (res && res.length > 0) {
-        alert(`Usuario ${username} creado con éxito`);
-        document.getElementById('user-form').reset();
-    } else {
-        alert("Error al crear usuario (puede que ya exista).");
-    }
-});
-
-// Actualizar Tarifas Normal
-document.getElementById('tarifas-normal-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const plans = ["Rutina", "Semana", "Quincena", "Mensual"];
-    for (const plan of plans) {
-        const monto = parseFloat(document.getElementById(`tn-${plan.toLowerCase()}`).value);
-        await supabaseRequest("PATCH", "tarifas", { "categoria": "eq.Normal", "plan_tipo": `eq.${plan}` }, {
-            monto: monto
-        });
-    }
-    alert("Tarifas normales actualizadas");
-    await loadTarifas();
-});
-
-// Actualizar Tarifas Entrenadora
-document.getElementById('tarifas-entrenadora-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const plans = ["Rutina", "Semana", "Quincena", "Mensual"];
-    for (const plan of plans) {
-        const monto = parseFloat(document.getElementById(`te-${plan.toLowerCase()}`).value);
-        await supabaseRequest("PATCH", "tarifas", { "categoria": "eq.Con Entrenadora", "plan_tipo": `eq.${plan}` }, {
-            monto: monto
-        });
-    }
-    alert("Tarifas con entrenadora actualizadas");
-    await loadTarifas();
+    alert("¡Tarifas con entrenadora actualizadas!");await loadTarifas();
 });
