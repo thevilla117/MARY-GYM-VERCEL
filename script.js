@@ -161,6 +161,7 @@ async function loadTarifas() {
         });
     }
     renderTarifas();
+    if (typeof fillTarifasInputs === "function") fillTarifasInputs();
 }
 
 // Renderizar Tarifas en la pestaña de pagos
@@ -556,5 +557,155 @@ async function loadHistorialAsistencia() {
     }
 }
 
-// Inicializar la app (Cargar datos si ya estuviera logueado, pero aquí forzamos login primero)
-// Podríamos implementar persistencia con localStorage si quisiéramos.
+function fillTarifasInputs() {
+    const plans = ["Rutina", "Semana", "Quincena", "Mensual"];
+    plans.forEach(plan => {
+        const normalInput = document.getElementById(`tn-${plan.toLowerCase()}`);
+        const entrenadoraInput = document.getElementById(`te-${plan.toLowerCase()}`);
+        if (normalInput) normalInput.value = tarifas["Normal"][plan];
+        if (entrenadoraInput) entrenadoraInput.value = tarifas["Con Entrenadora"][plan];
+    });
+}
+
+// === GESTIONAR CLIENTES (EDITAR Y ELIMINAR) ===
+
+const editSelect = document.getElementById('edit-cliente-select');
+const deleteMontoInput = document.getElementById('delete-monto');
+let currentLastPagoId = null;
+
+editSelect.addEventListener('change', async () => {
+    const nombre = editSelect.value;
+    const cliente = clientes.find(c => c.nombre === nombre);
+    
+    if (cliente) {
+        // Llenar formulario de edición
+        document.getElementById('edit-nombre').value = cliente.nombre;
+        document.getElementById('edit-telefono').value = cliente.telefono ? cliente.telefono.slice(-10) : '';
+        document.getElementById('edit-vencimiento').value = cliente.fecha_vencimiento;
+        document.getElementById('edit-plan').value = cliente.plan_actual || 'Rutina';
+        
+        // Buscar último pago para el formulario de eliminación
+        const params = {
+            "cliente_id": `eq.${cliente.id}`,
+            "select": "id,monto,notas",
+            "order": "id.desc",
+            "limit": "1"
+        };
+        const pagos = await supabaseRequest("GET", "pagos", params);
+        if (pagos && pagos.length > 0) {
+            deleteMontoInput.value = pagos[0].monto;
+            currentLastPagoId = pagos[0].id;
+        } else {
+            deleteMontoInput.value = 0;
+            currentLastPagoId = null;
+        }
+    }
+});
+
+// Guardar Cambios (Editar)
+document.getElementById('edit-cliente-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombreSel = editSelect.value;
+    const cliente = clientes.find(c => c.nombre === nombreSel);
+    
+    if (cliente) {
+        const nuevoNombre = document.getElementById('edit-nombre').value;
+        const nuevoTel = document.getElementById('edit-telefono').value;
+        const nuevoVencimiento = document.getElementById('edit-vencimiento').value;
+        const nuevoPlan = document.getElementById('edit-plan').value;
+        
+        const telefonoNorm = nuevoTel.length === 10 ? "57" + nuevoTel : nuevoTel;
+        
+        await supabaseRequest("PATCH", "clientes", { "id": `eq.${cliente.id}` }, {
+            nombre: nuevoNombre,
+            telefono: telefonoNorm,
+            fecha_vencimiento: nuevoVencimiento,
+            plan_actual: nuevoPlan
+        });
+        
+        alert(`Datos de ${nuevoNombre} actualizados`);
+        await loadClientes();
+    }
+});
+
+// Eliminar Cliente
+document.getElementById('delete-cliente-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombreSel = editSelect.value;
+    const cliente = clientes.find(c => c.nombre === nombreSel);
+    
+    if (cliente) {
+        const motivo = document.getElementById('delete-motivo').value;
+        const montoFinal = parseFloat(document.getElementById('delete-monto').value);
+        
+        // 1. Marcar como borrado
+        await supabaseRequest("PATCH", "clientes", { "id": `eq.${cliente.id}` }, {
+            borrado: true
+        });
+        
+        // 2. Actualizar último pago si existe
+        if (currentLastPagoId) {
+            await supabaseRequest("PATCH", "pagos", { "id": `eq.${currentLastPagoId}` }, {
+                monto: montoFinal,
+                notas: motivo
+            });
+        }
+        
+        alert(`Cliente ${cliente.nombre} eliminado y pago ajustado.`);
+        await loadClientes();
+        document.getElementById('delete-cliente-form').reset();
+    }
+});
+
+// === CONFIGURACIÓN (CREAR USUARIO Y TARIFAS) ===
+
+// Crear Usuario
+document.getElementById('user-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('new-username').value;
+    const pass = document.getElementById('new-password').value;
+    const rol = document.getElementById('new-rol').value;
+    
+    const hashedPass = await hashPassword(pass);
+    
+    const res = await supabaseRequest("POST", "usuarios", {}, {
+        username: username,
+        password: hashedPass,
+        rol: rol
+    });
+    
+    if (res && res.length > 0) {
+        alert(`Usuario ${username} creado con éxito`);
+        document.getElementById('user-form').reset();
+    } else {
+        alert("Error al crear usuario (puede que ya exista).");
+    }
+});
+
+// Actualizar Tarifas Normal
+document.getElementById('tarifas-normal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const plans = ["Rutina", "Semana", "Quincena", "Mensual"];
+    for (const plan of plans) {
+        const monto = parseFloat(document.getElementById(`tn-${plan.toLowerCase()}`).value);
+        await supabaseRequest("PATCH", "tarifas", { "categoria": "eq.Normal", "plan_tipo": `eq.${plan}` }, {
+            monto: monto
+        });
+    }
+    alert("Tarifas normales actualizadas");
+    await loadTarifas();
+});
+
+// Actualizar Tarifas Entrenadora
+document.getElementById('tarifas-entrenadora-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const plans = ["Rutina", "Semana", "Quincena", "Mensual"];
+    for (const plan of plans) {
+        const monto = parseFloat(document.getElementById(`te-${plan.toLowerCase()}`).value);
+        await supabaseRequest("PATCH", "tarifas", { "categoria": "eq.Con Entrenadora", "plan_tipo": `eq.${plan}` }, {
+            monto: monto
+        });
+    }
+    alert("Tarifas con entrenadora actualizadas");
+    await loadTarifas();
+});
